@@ -36,7 +36,6 @@ class CommentViewSet(CommentPostBaseMixin, viewsets.ModelViewSet):
     object_viewset = 'комментарии'
     permission_classes = (OwnerOrReadOnly,)
 
-
     def get_post(self):
         post_id = self.kwargs.get('post_id')
         return get_object_or_404(Post, id=post_id)
@@ -52,6 +51,12 @@ class FollowViewSet(mixins.CreateModelMixin, mixins.ListModelMixin,
     permission_classes = (permissions.IsAuthenticated,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('following__username', )
+
+    def get_queryset(self):
+        queryset = Follow.objects.all()
+        user = self.request.user
+        queryset = queryset.filter(user=user)
+        return queryset
 
     def perform_create(self, serializer):
         if serializer.validated_data.get('following') == self.request.user:

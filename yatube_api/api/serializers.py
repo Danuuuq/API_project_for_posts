@@ -23,26 +23,11 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value(data)
 
 
-class PostSerializer(BasePostCommentSerializer):
-    image = Base64ImageField(required=False, allow_null=True)
-
-    class Meta:
-        model = Post
-        fields = ('id', 'author', 'text', 'pub_date',
-                  'image', 'group')
-
-
 class CommentSerializer(BasePostCommentSerializer):
     class Meta:
         model = Comment
         fields = ('id', 'author', 'text', 'created', 'post')
         read_only_fields = ('post',)
-
-
-class GroupSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Group
-        fields = ('id', 'title', 'slug', 'description')
 
 
 class FollowSerializer(serializers.ModelSerializer):
@@ -56,3 +41,18 @@ class FollowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Follow
         fields = ('user', 'following')
+
+
+class GroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Group
+        fields = ('id', 'title', 'slug', 'description')
+
+
+class PostSerializer(BasePostCommentSerializer):
+    image = Base64ImageField(required=False, allow_null=True)
+
+    class Meta:
+        model = Post
+        fields = ('id', 'author', 'text', 'pub_date',
+                  'image', 'group')
