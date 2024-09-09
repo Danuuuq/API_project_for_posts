@@ -45,16 +45,8 @@ class GroupSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'slug', 'description')
 
 
-class FollowingSerializer(serializers.ModelSerializer):
-    
-    class Meta:
-        model = User
-        fileds = ('username',)
-
-
 class FollowSerializer(serializers.ModelSerializer):
     user = SlugRelatedField(slug_field='username', read_only=True)
-    # following = FollowingSerializer(required=True, many=False)
     following = SlugRelatedField(
         queryset=User.objects.all(),
         slug_field='username',
