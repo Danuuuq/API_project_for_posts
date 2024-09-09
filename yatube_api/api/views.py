@@ -1,5 +1,6 @@
 from rest_framework import viewsets, exceptions, mixins, permissions, filters
 from rest_framework.pagination import LimitOffsetPagination
+from django.db.utils import IntegrityError
 from django.shortcuts import get_object_or_404
 
 from .serializers import (PostSerializer, GroupSerializer,
@@ -59,12 +60,12 @@ class FollowViewSet(mixins.CreateModelMixin, mixins.ListModelMixin,
         return queryset
 
     def perform_create(self, serializer):
-        if serializer.validated_data.get('following') == self.request.user:
+        following = serializer.validated_data.get('following')
+        if following == self.request.user:
             raise exceptions.ParseError('Нельзя подписаться на самого себя')
         try:
             serializer.save(user=self.request.user)
-        except:
-            following = serializer.data['following']
+        except IntegrityError:
             raise exceptions.ParseError(f'Вы уже подписаны на {following}')
 
 
