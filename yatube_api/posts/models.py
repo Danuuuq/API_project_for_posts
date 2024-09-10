@@ -26,6 +26,12 @@ class Follow(models.Model):
         User, on_delete=models.CASCADE, related_name='follower')
 
     class Meta:
+        # constraints = [
+        #     models.UniqueConstraint(
+        #         fields=['user', 'following'],
+        #         name='unique_follower_following'
+        #     )
+        # ]
         unique_together = ('user', 'following')
         ordering = ('user', 'following')
         verbose_name = 'подписка'

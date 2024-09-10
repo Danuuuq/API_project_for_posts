@@ -3,33 +3,11 @@ from rest_framework.pagination import LimitOffsetPagination
 from django.db.utils import IntegrityError
 from django.shortcuts import get_object_or_404
 
+from .mixins import CommentPostBaseMixin
+from .permissions import OwnerOrReadOnly
 from .serializers import (PostSerializer, GroupSerializer,
                           CommentSerializer, FollowSerializer)
-from .permissions import OwnerOrReadOnly
-from posts.models import Group, Post, Follow
-
-
-class CommentPostBaseMixin(mixins.CreateModelMixin,
-                           mixins.UpdateModelMixin,
-                           mixins.DestroyModelMixin):
-
-    def perform_create(self, serializer):
-        if self.serializer_class == CommentSerializer:
-            serializer.save(author=self.request.user, post=self.get_post())
-        else:
-            serializer.save(author=self.request.user)
-
-    def perform_update(self, serializer):
-        if serializer.instance.author != self.request.user:
-            raise exceptions.PermissionDenied(
-                f"Вы не можете редактировать чужие {self.object_viewset}!")
-        super().perform_update(serializer)
-
-    def perform_destroy(self, instance):
-        if instance.author != self.request.user:
-            raise exceptions.PermissionDenied(
-                f"Вы не можете удалять чужие {self.object_viewset}!")
-        super().perform_destroy(instance)
+from posts.models import Group, Post, Follow, User
 
 
 class CommentViewSet(CommentPostBaseMixin, viewsets.ModelViewSet):
@@ -37,36 +15,34 @@ class CommentViewSet(CommentPostBaseMixin, viewsets.ModelViewSet):
     object_viewset = 'комментарии'
     permission_classes = (OwnerOrReadOnly,)
 
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user, post=self.get_post())
+
     def get_post(self):
         post_id = self.kwargs.get('post_id')
         return get_object_or_404(Post, id=post_id)
 
     def get_queryset(self):
-        return self.get_post().comments
+        return self.get_post().comments.all()
 
 
 class FollowViewSet(mixins.CreateModelMixin, mixins.ListModelMixin,
                     viewsets.GenericViewSet):
-    queryset = Follow.objects.all()
     serializer_class = FollowSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('following__username', )
 
     def get_queryset(self):
-        queryset = Follow.objects.all()
         user = self.request.user
-        queryset = queryset.filter(user=user)
-        return queryset
+        return User.objects.get(username=user).follower.all()
 
-    def perform_create(self, serializer):
-        following = serializer.validated_data.get('following')
-        if following == self.request.user:
-            raise exceptions.ParseError('Нельзя подписаться на самого себя')
-        try:
-            serializer.save(user=self.request.user)
-        except IntegrityError:
-            raise exceptions.ParseError(f'Вы уже подписаны на {following}')
+    # def perform_create(self, serializer):
+    #     following = serializer.validated_data.get('following')
+    #     try:
+    #         serializer.save(user=self.request.user)
+    #     except IntegrityError:
+    #         raise exceptions.ParseError(f'Вы уже подписаны на {following}')
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
@@ -81,3 +57,6 @@ class PostViewSet(CommentPostBaseMixin, viewsets.ModelViewSet):
     object_viewset = 'посты'
     permission_classes = (OwnerOrReadOnly,)
     pagination_class = LimitOffsetPagination
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
