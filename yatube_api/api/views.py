@@ -1,13 +1,12 @@
-from rest_framework import viewsets, exceptions, mixins, permissions, filters
+from rest_framework import viewsets, mixins, permissions, filters
 from rest_framework.pagination import LimitOffsetPagination
-from django.db.utils import IntegrityError
 from django.shortcuts import get_object_or_404
 
 from .mixins import CommentPostBaseMixin
 from .permissions import OwnerOrReadOnly
 from .serializers import (PostSerializer, GroupSerializer,
                           CommentSerializer, FollowSerializer)
-from posts.models import Group, Post, Follow, User
+from posts.models import Group, Post, User
 
 
 class CommentViewSet(CommentPostBaseMixin, viewsets.ModelViewSet):
@@ -33,16 +32,12 @@ class FollowViewSet(mixins.CreateModelMixin, mixins.ListModelMixin,
     filter_backends = (filters.SearchFilter,)
     search_fields = ('following__username', )
 
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
     def get_queryset(self):
         user = self.request.user
         return User.objects.get(username=user).follower.all()
-
-    # def perform_create(self, serializer):
-    #     following = serializer.validated_data.get('following')
-    #     try:
-    #         serializer.save(user=self.request.user)
-    #     except IntegrityError:
-    #         raise exceptions.ParseError(f'Вы уже подписаны на {following}')
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
