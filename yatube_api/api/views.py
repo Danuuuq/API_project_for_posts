@@ -6,7 +6,7 @@ from .mixins import CommentPostBaseMixin
 from .permissions import OwnerOrReadOnly
 from .serializers import (PostSerializer, GroupSerializer,
                           CommentSerializer, FollowSerializer)
-from posts.models import Group, Post, User
+from posts.models import Group, Post
 
 
 class CommentViewSet(CommentPostBaseMixin, viewsets.ModelViewSet):
