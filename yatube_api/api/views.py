@@ -36,8 +36,7 @@ class FollowViewSet(mixins.CreateModelMixin, mixins.ListModelMixin,
         serializer.save(user=self.request.user)
 
     def get_queryset(self):
-        user = self.request.user
-        return User.objects.get(username=user).follower.all()
+        return self.request.user.follower.all()
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
